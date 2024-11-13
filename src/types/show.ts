@@ -1,0 +1,25 @@
+export interface Show {
+  id: number;
+  name: string;
+  image: {
+    medium: string;
+    original: string;
+  };
+  summary: string;
+}
+
+export interface Episode {
+  id: number;
+  name: string;
+  season: number;
+  number: number;
+  summary: string;
+  watched: boolean;
+  note?: string;
+}
+
+export interface TrackedShow extends Show {
+  episodes: Episode[];
+  currentSeason: number;
+  lastWatchedEpisode?: Episode;
+}
