@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Tv, MonitorPlay, BookMarked, Users } from 'lucide-react';
 import { AuthModal } from '../components/AuthModal';
@@ -10,10 +10,11 @@ export function Landing() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
-  if (user) {
-    navigate('/dashboard');
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleAuthClick = (mode: 'login' | 'register') => {
     setAuthMode(mode);
