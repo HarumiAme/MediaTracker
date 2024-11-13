@@ -14,7 +14,7 @@ export function ShowCard({ show, onClick }: ShowCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-xl shadow-lg overflow-hidden transition-transform hover:scale-105 cursor-pointer"
+      className="bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-gray-700 group"
     >
       <div className="relative h-48">
         <img
@@ -22,10 +22,10 @@ export function ShowCard({ show, onClick }: ShowCardProps) {
           alt={show.name}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-0 p-4 text-white">
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-transparent" />
+        <div className="absolute bottom-0 p-4 text-gray-100">
           <h3 className="text-xl font-bold">{show.name}</h3>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2 mt-2 text-gray-300">
             <Play size={16} />
             <span className="text-sm">
               Season {show.currentSeason}
@@ -37,7 +37,7 @@ export function ShowCard({ show, onClick }: ShowCardProps) {
           </div>
         </div>
       </div>
-      <div className="w-full bg-gray-200 h-1">
+      <div className="w-full bg-gray-700 h-1">
         <div
           className="bg-emerald-500 h-1 transition-all duration-300"
           style={{ width: `${progress}%` }}
