@@ -19,6 +19,7 @@ export interface Episode {
 }
 
 export interface TrackedShow extends Show {
+  userId: string;
   episodes: Episode[];
   currentSeason: number;
   lastWatchedEpisode?: Episode;

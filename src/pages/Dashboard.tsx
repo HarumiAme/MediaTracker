@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Plus, Loader2 } from 'lucide-react';
 import { ShowCard } from '../components/ShowCard';
 import { AddShowModal } from '../components/AddShowModal';
 import { ShowDetail } from '../components/ShowDetail';
@@ -8,10 +8,14 @@ import { useAuthStore } from '../store/useAuthStore';
 import { Show } from '../types/show';
 
 export function Dashboard() {
-  const { shows, addShow, toggleEpisodeWatched, updateEpisodeNote, setCurrentSeason } = useShowStore();
+  const { shows, loading, loadShows, addShow, toggleEpisodeWatched, updateEpisodeNote, setCurrentSeason } = useShowStore();
   const { signOut, user } = useAuthStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedShow, setSelectedShow] = useState<number | null>(null);
+
+  useEffect(() => {
+    loadShows();
+  }, [loadShows]);
 
   const handleAddShow = async (show: Show) => {
     await addShow(show);
@@ -19,6 +23,14 @@ export function Dashboard() {
   };
 
   const selectedShowData = shows.find((s) => s.id === selectedShow);
+
+  if (loading && shows.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin w-8 h-8 text-emerald-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
