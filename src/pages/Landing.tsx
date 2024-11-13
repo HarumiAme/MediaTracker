@@ -1,20 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { Tv, MonitorPlay, BookMarked, Users } from 'lucide-react';
 import { AuthModal } from '../components/AuthModal';
-import { useAuthStore } from '../store/useAuthStore';
 
 export function Landing() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const { user } = useAuthStore();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
 
   const handleAuthClick = (mode: 'login' | 'register') => {
     setAuthMode(mode);
