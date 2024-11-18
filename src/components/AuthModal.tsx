@@ -96,37 +96,38 @@ export function AuthModal({ isOpen, onClose, initialMode }: AuthModalProps) {
   const content = modalContent[mode];
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-md p-8 relative">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-gray-900 rounded-2xl w-full max-w-md p-8 relative border border-gray-800 shadow-xl">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 p-2 hover:bg-gray-100 rounded-full text-gray-500"
+          className="absolute right-4 top-4 p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-gray-300 transition-colors"
         >
           <X size={20} />
         </button>
-        
+
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 text-emerald-500 flex items-center justify-center">
+          <div className="mx-auto h-12 w-12 text-emerald-400 flex items-center justify-center">
             <Tv size={48} />
           </div>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
+          <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-100">
             {content.title}
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {content.subtitle}
-          </p>
+          <p className="mt-2 text-sm text-gray-400">{content.subtitle}</p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {errorMessage && (
-            <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
+            <div className="bg-red-500/10 text-red-400 p-3 rounded-lg text-sm border border-red-500/20">
               {errorMessage}
             </div>
           )}
-          
-          <div className="space-y-4">
+
+          <div className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Email address
               </label>
               <input
@@ -136,12 +137,15 @@ export function AuthModal({ isOpen, onClose, initialMode }: AuthModalProps) {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+                className="block w-full rounded-lg border border-gray-700 bg-gray-800 text-gray-100 px-4 py-3 shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-base placeholder-gray-500 transition-colors"
                 placeholder="you@example.com"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Password
               </label>
               <input
@@ -151,7 +155,7 @@ export function AuthModal({ isOpen, onClose, initialMode }: AuthModalProps) {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+                className="block w-full rounded-lg border border-gray-700 bg-gray-800 text-gray-100 px-4 py-3 shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-base placeholder-gray-500 transition-colors"
                 placeholder="••••••••"
                 minLength={6}
               />
@@ -161,7 +165,7 @@ export function AuthModal({ isOpen, onClose, initialMode }: AuthModalProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
+            className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-gray-900 bg-gradient-to-r from-emerald-400 to-emerald-500 hover:from-emerald-500 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 transition-colors focus:ring-offset-gray-900"
           >
             {loading ? (
               <Loader2 className="animate-spin" size={20} />
@@ -174,7 +178,7 @@ export function AuthModal({ isOpen, onClose, initialMode }: AuthModalProps) {
             <button
               type="button"
               onClick={handleModeSwitch}
-              className="text-sm text-emerald-600 hover:text-emerald-500"
+              className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
             >
               {content.switchText}
             </button>
