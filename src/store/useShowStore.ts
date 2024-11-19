@@ -8,7 +8,6 @@ interface ShowStore {
   shows: TrackedShow[];
   loading: boolean;
   error: string | null;
-  initialized: boolean;
   loadShows: () => Promise<void>;
   addShow: (show: Show) => Promise<void>;
   toggleEpisodeWatched: (showId: number, episodeId: number) => Promise<void>;
@@ -16,22 +15,26 @@ interface ShowStore {
   setCurrentSeason: (showId: number, season: number) => Promise<void>;
   deleteShow: (showId: number) => Promise<void>;
   markAllEpisodesWatched: (showId: number, season?: number, watched?: boolean) => Promise<void>;
+  clearShows: () => void;
 }
 
 export const useShowStore = create<ShowStore>((set, get) => ({
   shows: [],
   loading: false,
   error: null,
-  initialized: false,
+
+  clearShows: () => {
+    set({ shows: [], loading: false, error: null });
+  },
 
   loadShows: async () => {
     const { user } = useAuthStore.getState();
-    if (!user || get().initialized) return;
+    if (!user) return;
 
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, shows: [] }); // Clear shows immediately when loading
     try {
       const shows = await showService.getShows(user.uid);
-      set({ shows, initialized: true });
+      set({ shows });
     } catch (error) {
       set({ error: 'Failed to load shows' });
       console.error('Error loading shows:', error);
@@ -48,17 +51,31 @@ export const useShowStore = create<ShowStore>((set, get) => ({
     try {
       const response = await axios.get(`https://api.tvmaze.com/shows/${show.id}/episodes`);
       const episodes: Episode[] = response.data.map((ep: any) => ({
-        ...ep,
+        id: ep.id,
+        name: ep.name,
+        season: ep.season,
+        number: ep.number,
+        summary: ep.summary,
         watched: false,
         note: '',
       }));
 
+      const trackedShow: TrackedShow = {
+        ...show,
+        userId: user.uid,
+        episodes,
+        currentSeason: 1,
+      };
+
       await showService.addShow(user.uid, show, episodes);
-      const shows = await showService.getShows(user.uid);
-      set({ shows });
+      
+      // Update local state immediately
+      const { shows } = get();
+      set({ shows: [...shows, trackedShow] });
     } catch (error) {
       set({ error: 'Failed to add show' });
       console.error('Error adding show:', error);
+      throw error; // Re-throw to handle in the UI
     } finally {
       set({ loading: false });
     }

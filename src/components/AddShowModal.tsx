@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 interface AddShowModalProps {
   onClose: () => void;
-  onAddShow: (show: Show) => void;
+  onAddShow: (show: Show) => Promise<void>;
 }
 
 export function AddShowModal({ onClose, onAddShow }: AddShowModalProps) {
@@ -29,6 +29,7 @@ export function AddShowModal({ onClose, onAddShow }: AddShowModalProps) {
   };
 
   const handleAddShow = async (show: Show) => {
+    if (adding) return;
     setAdding(true);
     try {
       await onAddShow(show);
@@ -37,8 +38,9 @@ export function AddShowModal({ onClose, onAddShow }: AddShowModalProps) {
     } catch (error) {
       console.error('Error adding show:', error);
       toast.error('Failed to add show. Please try again.');
+    } finally {
+      setAdding(false);
     }
-    setAdding(false);
   };
 
   return (
@@ -66,7 +68,8 @@ export function AddShowModal({ onClose, onAddShow }: AddShowModalProps) {
             />
             <button
               onClick={() => searchShows(search)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-300 transition-colors"
+              disabled={loading || !search}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
             >
               <Search size={20} />
             </button>
@@ -84,7 +87,7 @@ export function AddShowModal({ onClose, onAddShow }: AddShowModalProps) {
               {results.map((show) => (
                 <div
                   key={show.id}
-                  onClick={() => !adding && handleAddShow(show)}
+                  onClick={() => handleAddShow(show)}
                   className={`flex gap-4 p-3 rounded-lg bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-gray-600 transition-colors group ${
                     adding ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
                   }`}

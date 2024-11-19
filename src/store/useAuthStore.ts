@@ -7,6 +7,7 @@ import {
   User
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+import { useShowStore } from './useShowStore';
 
 interface AuthStore {
   user: User | null;
@@ -21,6 +22,10 @@ export const useAuthStore = create<AuthStore>((set) => {
   // Set up auth state listener
   onAuthStateChanged(auth, (user) => {
     set({ user, loading: false });
+    if (!user) {
+      // Clear shows when user logs out
+      useShowStore.getState().clearShows();
+    }
   });
 
   return {
