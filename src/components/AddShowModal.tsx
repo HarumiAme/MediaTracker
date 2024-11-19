@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Search, X, Loader2 } from 'lucide-react';
 import { Show } from '../types/show';
+import { toast } from 'sonner';
 
 interface AddShowModalProps {
   onClose: () => void;
@@ -12,6 +13,7 @@ export function AddShowModal({ onClose, onAddShow }: AddShowModalProps) {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<Show[]>([]);
   const [loading, setLoading] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const searchShows = async (query: string) => {
     if (!query) return;
@@ -21,8 +23,22 @@ export function AddShowModal({ onClose, onAddShow }: AddShowModalProps) {
       setResults(response.data.map((item: any) => item.show));
     } catch (error) {
       console.error('Error searching shows:', error);
+      toast.error('Failed to search shows. Please try again.');
     }
     setLoading(false);
+  };
+
+  const handleAddShow = async (show: Show) => {
+    setAdding(true);
+    try {
+      await onAddShow(show);
+      toast.success(`"${show.name}" has been added to your shows!`);
+      onClose();
+    } catch (error) {
+      console.error('Error adding show:', error);
+      toast.error('Failed to add show. Please try again.');
+    }
+    setAdding(false);
   };
 
   return (
@@ -68,8 +84,10 @@ export function AddShowModal({ onClose, onAddShow }: AddShowModalProps) {
               {results.map((show) => (
                 <div
                   key={show.id}
-                  onClick={() => onAddShow(show)}
-                  className="flex gap-4 p-3 rounded-lg bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-gray-600 cursor-pointer transition-colors group"
+                  onClick={() => !adding && handleAddShow(show)}
+                  className={`flex gap-4 p-3 rounded-lg bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-gray-600 transition-colors group ${
+                    adding ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                  }`}
                 >
                   <img
                     src={show.image?.medium || 'https://via.placeholder.com/100x140'}

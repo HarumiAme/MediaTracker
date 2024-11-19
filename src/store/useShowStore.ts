@@ -11,10 +11,11 @@ interface ShowStore {
   initialized: boolean;
   loadShows: () => Promise<void>;
   addShow: (show: Show) => Promise<void>;
-  deleteShow: (showId: number) => Promise<void>;
   toggleEpisodeWatched: (showId: number, episodeId: number) => Promise<void>;
   updateEpisodeNote: (showId: number, episodeId: number, note: string) => Promise<void>;
   setCurrentSeason: (showId: number, season: number) => Promise<void>;
+  deleteShow: (showId: number) => Promise<void>;
+  markAllEpisodesWatched: (showId: number, season?: number, watched?: boolean) => Promise<void>;
 }
 
 export const useShowStore = create<ShowStore>((set, get) => ({
@@ -34,23 +35,6 @@ export const useShowStore = create<ShowStore>((set, get) => ({
     } catch (error) {
       set({ error: 'Failed to load shows' });
       console.error('Error loading shows:', error);
-    } finally {
-      set({ loading: false });
-    }
-  },
-
-  deleteShow: async (showId: number) => {
-    const { user } = useAuthStore.getState();
-    if (!user) return;
-
-    set({ loading: true, error: null });
-    try {
-      await showService.deleteShow(user.uid, showId);
-      const { shows } = get();
-      set({ shows: shows.filter(show => show.id !== showId) });
-    } catch (error) {
-      set({ error: 'Failed to delete show' });
-      console.error('Error deleting show:', error);
     } finally {
       set({ loading: false });
     }
@@ -136,6 +120,50 @@ export const useShowStore = create<ShowStore>((set, get) => ({
     const updatedShows = shows.map((show) =>
       show.id === showId ? { ...show, currentSeason: season } : show
     );
+
+    set({ shows: updatedShows });
+    const updatedShow = updatedShows.find((s) => s.id === showId);
+    if (updatedShow) {
+      await showService.updateShow(user.uid, updatedShow);
+    }
+  },
+
+  deleteShow: async (showId: number) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+
+    set({ loading: true, error: null });
+    try {
+      await showService.deleteShow(user.uid, showId);
+      const { shows } = get();
+      set({ shows: shows.filter(show => show.id !== showId) });
+    } catch (error) {
+      set({ error: 'Failed to delete show' });
+      console.error('Error deleting show:', error);
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  markAllEpisodesWatched: async (showId: number, season?: number, watched: boolean = true) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+
+    const { shows } = get();
+    const updatedShows = shows.map((show) => {
+      if (show.id === showId) {
+        return {
+          ...show,
+          episodes: show.episodes.map((ep) => {
+            if (season === undefined || ep.season === season) {
+              return { ...ep, watched };
+            }
+            return ep;
+          }),
+        };
+      }
+      return show;
+    });
 
     set({ shows: updatedShows });
     const updatedShow = updatedShows.find((s) => s.id === showId);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TrackedShow, Episode } from '../types/show';
-import { ChevronLeft, Check, MessageSquare, ChevronDown, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, MessageSquare, ChevronDown, Trash2, X } from 'lucide-react';
 import { useShowStore } from '../store/useShowStore';
 import { ConfirmationModal } from './ConfirmationModal';
 
@@ -21,7 +21,9 @@ export function ShowDetail({
 }: ShowDetailProps) {
   const [selectedEpisode, setSelectedEpisode] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const { deleteShow } = useShowStore();
+  const [showMarkWatchedModal, setShowMarkWatchedModal] = useState(false);
+  const [showMarkUnwatchedModal, setShowMarkUnwatchedModal] = useState(false);
+  const { deleteShow, markAllEpisodesWatched } = useShowStore();
 
   const seasons = Array.from(
     new Set(show.episodes.map((ep) => ep.season))
@@ -34,6 +36,14 @@ export function ShowDetail({
   const handleDelete = async () => {
     await deleteShow(show.id);
     onBack();
+  };
+
+  const handleMarkSeasonWatched = async () => {
+    await markAllEpisodesWatched(show.id, show.currentSeason);
+  };
+
+  const handleMarkSeasonUnwatched = async () => {
+    await markAllEpisodesWatched(show.id, show.currentSeason, false);
   };
 
   return (
@@ -74,6 +84,22 @@ export function ShowDetail({
                   ))}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowMarkWatchedModal(true)}
+                  className="px-4 py-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Check size={20} />
+                  Mark Season as Watched
+                </button>
+                <button
+                  onClick={() => setShowMarkUnwatchedModal(true)}
+                  className="px-4 py-2 bg-gray-800 text-gray-400 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2 border border-gray-700"
+                >
+                  <X size={20} />
+                  Mark Season as Unwatched
+                </button>
               </div>
             </div>
           </div>
@@ -153,6 +179,24 @@ export function ShowDetail({
         message={`Are you sure you want to delete "${show.name}"? This action cannot be undone.`}
         confirmText="Delete"
         isDangerous
+      />
+
+      <ConfirmationModal
+        isOpen={showMarkWatchedModal}
+        onClose={() => setShowMarkWatchedModal(false)}
+        onConfirm={handleMarkSeasonWatched}
+        title="Mark Season as Watched"
+        message={`Are you sure you want to mark all episodes of Season ${show.currentSeason} as watched?`}
+        confirmText="Mark Season as Watched"
+      />
+
+      <ConfirmationModal
+        isOpen={showMarkUnwatchedModal}
+        onClose={() => setShowMarkUnwatchedModal(false)}
+        onConfirm={handleMarkSeasonUnwatched}
+        title="Mark Season as Unwatched"
+        message={`Are you sure you want to mark all episodes of Season ${show.currentSeason} as unwatched?`}
+        confirmText="Mark Season as Unwatched"
       />
     </>
   );
