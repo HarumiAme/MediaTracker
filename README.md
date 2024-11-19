@@ -1,5 +1,5 @@
 # Media Tracker
-![image](https://github.com/user-attachments/assets/0a1d2f8c-3896-4987-855e-d6570208622c)
+![image](https://github.com/user-attachments/assets/a15dce6d-9401-429c-8829-47e39a6520aa)
 #### [Online version](https://mediatracker-beta.vercel.app)
 
 ## QR Code
