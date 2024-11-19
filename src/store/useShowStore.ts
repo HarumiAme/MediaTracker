@@ -11,6 +11,7 @@ interface ShowStore {
   initialized: boolean;
   loadShows: () => Promise<void>;
   addShow: (show: Show) => Promise<void>;
+  deleteShow: (showId: number) => Promise<void>;
   toggleEpisodeWatched: (showId: number, episodeId: number) => Promise<void>;
   updateEpisodeNote: (showId: number, episodeId: number, note: string) => Promise<void>;
   setCurrentSeason: (showId: number, season: number) => Promise<void>;
@@ -33,6 +34,23 @@ export const useShowStore = create<ShowStore>((set, get) => ({
     } catch (error) {
       set({ error: 'Failed to load shows' });
       console.error('Error loading shows:', error);
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  deleteShow: async (showId: number) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+
+    set({ loading: true, error: null });
+    try {
+      await showService.deleteShow(user.uid, showId);
+      const { shows } = get();
+      set({ shows: shows.filter(show => show.id !== showId) });
+    } catch (error) {
+      set({ error: 'Failed to delete show' });
+      console.error('Error deleting show:', error);
     } finally {
       set({ loading: false });
     }
