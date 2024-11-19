@@ -87,7 +87,7 @@ export function AuthModal({ isOpen, onClose, initialMode }: AuthModalProps) {
     },
     register: {
       title: 'Create your account',
-      subtitle: 'Join ShowTracker and start organizing your watchlist',
+      subtitle: 'Join MediaTracker and start organizing your watchlist',
       buttonText: 'Create account',
       switchText: 'Already have an account? Sign in',
     },

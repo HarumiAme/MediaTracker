@@ -35,7 +35,7 @@ export function Dashboard() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-500 bg-clip-text text-transparent">
-              ShowTracker
+              MediaTracker
             </h1>
             <div className="flex items-center gap-6">
               <span className="text-gray-400">{user?.email}</span>

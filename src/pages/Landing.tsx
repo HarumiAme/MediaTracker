@@ -29,7 +29,7 @@ export function Landing() {
                   <Tv size={32} className="text-gray-900" />
                 </div>
                 <span className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-500 bg-clip-text text-transparent">
-                  ShowTracker
+                  MediaTracker
                 </span>
               </div>
               <div className="space-x-4">
