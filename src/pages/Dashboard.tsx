@@ -9,30 +9,39 @@ import { TrackedShow } from '../types/show';
 import { SortControls } from '../components/SortControls';
 
 type SortOption = 'lastWatched' | 'alphabetical' | 'progress';
+type SortDirection = 'asc' | 'desc';
 
-const sortShows = (shows: TrackedShow[], sortOption: SortOption): TrackedShow[] => {
+interface SortState {
+  option: SortOption;
+  direction: SortDirection;
+}
+
+const sortShows = (shows: TrackedShow[], sortState: SortState): TrackedShow[] => {
+  const { option, direction } = sortState;
+  const multiplier = direction === 'desc' ? 1 : -1; // Changed this line
+
   return [...shows].sort((a, b) => {
-    if (sortOption === 'alphabetical') {
-      return a.name.localeCompare(b.name);
+    if (option === 'alphabetical') {
+      return multiplier * a.name.localeCompare(b.name);
     }
     
-    if (sortOption === 'progress') {
+    if (option === 'progress') {
       const progressA = (a.episodes.filter(ep => ep.watched).length / a.episodes.length) * 100;
       const progressB = (b.episodes.filter(ep => ep.watched).length / b.episodes.length) * 100;
-      return progressB - progressA;
+      return multiplier * (progressB - progressA);
     }
     
-    if (sortOption === 'lastWatched') {
+    if (option === 'lastWatched') {
       const lastWatchedA = Math.max(...a.episodes.filter(ep => ep.watched).map(ep => ep.watchedAt || 0), 0);
       const lastWatchedB = Math.max(...b.episodes.filter(ep => ep.watched).map(ep => ep.watchedAt || 0), 0);
-      return lastWatchedB - lastWatchedA;
+      return multiplier * (lastWatchedB - lastWatchedA);
     }
     
     return 0;
   });
 };
 
-export function Dashboard() {
+function Dashboard() {
   const {
     shows,
     loading,
@@ -46,11 +55,21 @@ export function Dashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedShow, setSelectedShow] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOption, setSortOption] = useState<SortOption>('lastWatched');
+  const [sortState, setSortState] = useState<SortState>({
+    option: 'lastWatched',
+    direction: 'desc'
+  });
 
   useEffect(() => {
     loadShows();
   }, [loadShows]);
+
+  const handleSortChange = (newOption: SortOption) => {
+    setSortState(prev => ({
+      option: newOption,
+      direction: prev.option === newOption ? (prev.direction === 'asc' ? 'desc' : 'asc') : 'desc'
+    }));
+  };
 
   const filteredShows = shows.filter((show) =>
     show.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -71,9 +90,15 @@ export function Dashboard() {
     show => show.episodes.every(ep => ep.watched)
   );
 
-  const sortedInProgress = sortShows(inProgressShows, sortOption);
-  const sortedUpNext = sortShows(upNextShows, 'alphabetical');
-  const sortedCompleted = sortShows(completedShows, 'alphabetical');
+  const sortedInProgress = sortShows(inProgressShows, sortState);
+  const sortedUpNext = sortShows(upNextShows, {
+    option: 'alphabetical',
+    direction: sortState.option === 'alphabetical' ? sortState.direction : 'asc'
+  });
+  const sortedCompleted = sortShows(completedShows, {
+    option: 'alphabetical',
+    direction: sortState.option === 'alphabetical' ? sortState.direction : 'asc'
+  });
 
   if (loading && shows.length === 0) {
     return (
@@ -175,8 +200,9 @@ export function Dashboard() {
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-gray-100">In Progress</h2>
                   <SortControls
-                    currentSort={sortOption}
-                    onSortChange={setSortOption}
+                    currentSort={sortState.option}
+                    currentDirection={sortState.direction}
+                    onSortChange={handleSortChange}
                     showProgressSort
                     showLastWatchedSort
                   />
@@ -198,8 +224,9 @@ export function Dashboard() {
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-gray-100">Up Next</h2>
                   <SortControls
-                    currentSort={sortOption}
-                    onSortChange={setSortOption}
+                    currentSort={sortState.option}
+                    currentDirection={sortState.direction}
+                    onSortChange={handleSortChange}
                     showProgressSort={false}
                     showLastWatchedSort={false}
                   />
@@ -221,8 +248,9 @@ export function Dashboard() {
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-gray-100">Completed</h2>
                   <SortControls
-                    currentSort={sortOption}
-                    onSortChange={setSortOption}
+                    currentSort={sortState.option}
+                    currentDirection={sortState.direction}
+                    onSortChange={handleSortChange}
                     showProgressSort={false}
                     showLastWatchedSort={false}
                   />
@@ -251,3 +279,5 @@ export function Dashboard() {
     </div>
   );
 }
+
+export { Dashboard };
