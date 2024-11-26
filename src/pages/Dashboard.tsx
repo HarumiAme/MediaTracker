@@ -6,24 +6,49 @@ import { ShowDetail } from '../components/ShowDetail';
 import { useShowStore } from '../store/useShowStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { TrackedShow } from '../types/show';
+import { SortControls } from '../components/SortControls';
 
-function ShowSection({ title, shows, icon: Icon, description, onClick }: { 
+type SortOption = 'lastWatched' | 'alphabetical' | 'progress';
+
+function ShowSection({ 
+  title, 
+  shows, 
+  icon: Icon, 
+  description, 
+  onClick,
+  sortOption,
+  onSortChange,
+  showProgressSort = false,
+  showLastWatchedSort = false
+}: { 
   title: string; 
   shows: TrackedShow[]; 
   icon: React.ElementType;
   description: string;
   onClick: (show: TrackedShow) => void;
+  sortOption: SortOption;
+  onSortChange: (sort: SortOption) => void;
+  showProgressSort?: boolean;
+  showLastWatchedSort?: boolean;
 }) {
   if (shows.length === 0) return null;
 
   return (
     <div className="mb-12">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-gray-800">
-          <Icon className="w-5 h-5 text-emerald-400" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-gray-800">
+            <Icon className="w-5 h-5 text-emerald-400" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-100">{title}</h2>
+          <span className="text-gray-500 text-sm">({shows.length})</span>
         </div>
-        <h2 className="text-xl font-bold text-gray-100">{title}</h2>
-        <span className="text-gray-500 text-sm">({shows.length})</span>
+        <SortControls
+          currentSort={sortOption}
+          onSortChange={onSortChange}
+          showProgressSort={showProgressSort}
+          showLastWatchedSort={showLastWatchedSort}
+        />
       </div>
       <p className="text-gray-400 mb-6">{description}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -36,6 +61,13 @@ function ShowSection({ title, shows, icon: Icon, description, onClick }: {
 }
 
 export function Dashboard() {
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedShow, setSelectedShow] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [inProgressSort, setInProgressSort] = useState<SortOption>('lastWatched');
+  const [pendingSort, setPendingSort] = useState<SortOption>('alphabetical');
+  const [completedSort, setCompletedSort] = useState<SortOption>('alphabetical');
+
   const {
     shows,
     loading,
@@ -46,9 +78,6 @@ export function Dashboard() {
     setCurrentSeason,
   } = useShowStore();
   const { signOut, user } = useAuthStore();
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedShow, setSelectedShow] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadShows();
@@ -57,6 +86,28 @@ export function Dashboard() {
   const filteredShows = shows.filter((show) =>
     show.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const sortShows = (shows: TrackedShow[], sortOption: SortOption): TrackedShow[] => {
+    return [...shows].sort((a, b) => {
+      if (sortOption === 'alphabetical') {
+        return a.name.localeCompare(b.name);
+      }
+      
+      if (sortOption === 'progress') {
+        const progressA = (a.episodes.filter(ep => ep.watched).length / a.episodes.length) * 100;
+        const progressB = (b.episodes.filter(ep => ep.watched).length / b.episodes.length) * 100;
+        return progressB - progressA;
+      }
+      
+      if (sortOption === 'lastWatched') {
+        const lastWatchedA = Math.max(...a.episodes.filter(ep => ep.watched).map(ep => ep.id), 0);
+        const lastWatchedB = Math.max(...b.episodes.filter(ep => ep.watched).map(ep => ep.id), 0);
+        return lastWatchedB - lastWatchedA;
+      }
+      
+      return 0;
+    });
+  };
 
   const categorizedShows = filteredShows.reduce(
     (acc, show) => {
@@ -75,6 +126,11 @@ export function Dashboard() {
     },
     { pending: [] as TrackedShow[], inProgress: [] as TrackedShow[], completed: [] as TrackedShow[] }
   );
+
+  // Sort each category
+  const sortedInProgress = sortShows(categorizedShows.inProgress, inProgressSort);
+  const sortedPending = sortShows(categorizedShows.pending, pendingSort);
+  const sortedCompleted = sortShows(categorizedShows.completed, completedSort);
 
   if (loading && shows.length === 0) {
     return (
@@ -167,24 +223,32 @@ export function Dashboard() {
             <div className="space-y-8">
               <ShowSection
                 title="In Progress"
-                shows={categorizedShows.inProgress}
+                shows={sortedInProgress}
                 icon={PlayCircle}
                 description="Shows you're currently watching"
                 onClick={(show) => setSelectedShow(show.id)}
+                sortOption={inProgressSort}
+                onSortChange={setInProgressSort}
+                showProgressSort={true}
+                showLastWatchedSort={true}
               />
               <ShowSection
                 title="Up Next"
-                shows={categorizedShows.pending}
+                shows={sortedPending}
                 icon={ListTodo}
                 description="Shows you haven't started watching yet"
                 onClick={(show) => setSelectedShow(show.id)}
+                sortOption={pendingSort}
+                onSortChange={setPendingSort}
               />
               <ShowSection
                 title="Completed"
-                shows={categorizedShows.completed}
+                shows={sortedCompleted}
                 icon={CheckCircle2}
                 description="Shows you've finished watching"
                 onClick={(show) => setSelectedShow(show.id)}
+                sortOption={completedSort}
+                onSortChange={setCompletedSort}
               />
             </div>
           )}
