@@ -1,16 +1,77 @@
 import React, { useState } from 'react';
 import { TrackedShow, Episode } from '../types/show';
-import { ChevronLeft, Check, MessageSquare, Trash2, X } from 'lucide-react';
+import { ChevronLeft, Check, MessageSquare, Trash2, X, ListChecks, ListTodo, ArrowDownUp } from 'lucide-react';
 import { useShowStore } from '../store/useShowStore';
 import { ConfirmationModal } from './ConfirmationModal';
 import { SeasonSelector } from './SeasonSelector';
 
-interface ShowDetailProps {
-  show: TrackedShow;
-  onBack: () => void;
-  onToggleWatched: (episodeId: number) => void;
-  onUpdateNote: (episodeId: number, note: string) => void;
-  onSeasonChange: (season: number) => void;
+// ... [Previous interfaces remain the same]
+
+function EpisodeList({ episodes, selectedEpisode, onToggleWatched, onUpdateNote, setSelectedEpisode }: EpisodeListProps) {
+  return (
+    <div className="space-y-4">
+      {episodes.map((episode) => (
+        <div
+          key={episode.id}
+          className={`rounded-xl border overflow-hidden transition-all duration-200 hover:border-gray-600 ${
+            episode.watched
+              ? 'bg-emerald-900/20 border-emerald-800/50'
+              : 'bg-gray-800 border-gray-700'
+          }`}
+        >
+          <div className="p-4">
+            <div className="flex items-start gap-4">
+              <button
+                onClick={() => onToggleWatched(episode.id)}
+                className={`p-2 rounded-lg transition-colors ${
+                  episode.watched
+                    ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                    : 'bg-gray-900 text-gray-500 hover:text-gray-400 hover:bg-gray-700'
+                }`}
+              >
+                <Check size={20} />
+              </button>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className={`font-semibold ${episode.watched ? 'text-emerald-300' : 'text-gray-100'}`}>
+                    Episode {episode.number}: {episode.name}
+                  </h3>
+                  <button
+                    onClick={() => setSelectedEpisode(
+                      selectedEpisode === episode.id ? null : episode.id
+                    )}
+                    className={`p-2 rounded-lg transition-colors ${
+                      episode.note
+                        ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                        : 'bg-gray-900 text-gray-500 hover:text-gray-400 hover:bg-gray-700'
+                    }`}
+                  >
+                    <MessageSquare size={20} />
+                  </button>
+                </div>
+                <p 
+                  className={`text-sm mt-1 ${episode.watched ? 'text-emerald-300/70' : 'text-gray-400'}`}
+                  dangerouslySetInnerHTML={{ __html: episode.summary || 'No description available.' }}
+                />
+              </div>
+            </div>
+            
+            {selectedEpisode === episode.id && (
+              <div className="mt-4 pl-14">
+                <textarea
+                  value={episode.note || ''}
+                  onChange={(e) => onUpdateNote(episode.id, e.target.value)}
+                  placeholder="Add your notes about this episode..."
+                  className="w-full p-3 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 resize-none"
+                  rows={4}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function ShowDetail({
@@ -24,6 +85,7 @@ export function ShowDetail({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showMarkWatchedModal, setShowMarkWatchedModal] = useState(false);
   const [showMarkUnwatchedModal, setShowMarkUnwatchedModal] = useState(false);
+  const [separateWatched, setSeparateWatched] = useState(true);
   const { deleteShow, markAllEpisodesWatched } = useShowStore();
 
   const seasons = Array.from(
@@ -33,6 +95,20 @@ export function ShowDetail({
   const currentSeasonEpisodes = show.episodes.filter(
     (ep) => ep.season === show.currentSeason
   );
+
+  let unwatchedEpisodes: Episode[] = [];
+  let watchedEpisodes: Episode[] = [];
+
+  if (separateWatched) {
+    unwatchedEpisodes = currentSeasonEpisodes.filter(ep => !ep.watched)
+      .sort((a, b) => a.number - b.number);
+    watchedEpisodes = currentSeasonEpisodes.filter(ep => ep.watched)
+      .sort((a, b) => a.number - b.number);
+  } else {
+    // When not separating, show all episodes in chronological order
+    unwatchedEpisodes = currentSeasonEpisodes.sort((a, b) => a.number - b.number);
+    watchedEpisodes = [];
+  }
 
   const handleDelete = async () => {
     await deleteShow(show.id);
@@ -99,68 +175,54 @@ export function ShowDetail({
         </div>
 
         <div className="max-w-4xl mx-auto px-6 py-8">
-          <div className="space-y-4">
-            {currentSeasonEpisodes.map((episode) => (
-              <div
-                key={episode.id}
-                className={`rounded-xl border overflow-hidden transition-all duration-200 hover:border-gray-600 ${
-                  episode.watched
-                    ? 'bg-emerald-900/20 border-emerald-800/50'
-                    : 'bg-gray-800 border-gray-700'
-                }`}
-              >
-                <div className="p-4">
-                  <div className="flex items-start gap-4">
-                    <button
-                      onClick={() => onToggleWatched(episode.id)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        episode.watched
-                          ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                          : 'bg-gray-900 text-gray-500 hover:text-gray-400 hover:bg-gray-700'
-                      }`}
-                    >
-                      <Check size={20} />
-                    </button>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className={`font-semibold ${episode.watched ? 'text-emerald-300' : 'text-gray-100'}`}>
-                          Episode {episode.number}: {episode.name}
-                        </h3>
-                        <button
-                          onClick={() => setSelectedEpisode(
-                            selectedEpisode === episode.id ? null : episode.id
-                          )}
-                          className={`p-2 rounded-lg transition-colors ${
-                            episode.note
-                              ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
-                              : 'bg-gray-900 text-gray-500 hover:text-gray-400 hover:bg-gray-700'
-                          }`}
-                        >
-                          <MessageSquare size={20} />
-                        </button>
-                      </div>
-                      <p 
-                        className={`text-sm mt-1 ${episode.watched ? 'text-emerald-300/70' : 'text-gray-400'}`}
-                        dangerouslySetInnerHTML={{ __html: episode.summary || 'No description available.' }}
-                      />
-                    </div>
-                  </div>
-                  
-                  {selectedEpisode === episode.id && (
-                    <div className="mt-4 pl-14">
-                      <textarea
-                        value={episode.note || ''}
-                        onChange={(e) => onUpdateNote(episode.id, e.target.value)}
-                        placeholder="Add your notes about this episode..."
-                        className="w-full p-3 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 resize-none"
-                        rows={4}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-xl font-bold text-gray-100">Season {show.currentSeason} Episodes</h2>
+            <button
+              onClick={() => setSeparateWatched(!separateWatched)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                separateWatched
+                  ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              <ArrowDownUp size={20} />
+              {separateWatched ? 'Separate Watched' : 'Show Chronologically'}
+            </button>
           </div>
+
+          {unwatchedEpisodes.length > 0 && (
+            <div className="mb-12">
+              {separateWatched && (
+                <div className="flex items-center gap-2 mb-6 text-gray-100">
+                  <ListTodo className="text-blue-400" size={20} />
+                  <h2 className="text-lg font-semibold">Episodes to Watch ({unwatchedEpisodes.length})</h2>
+                </div>
+              )}
+              <EpisodeList
+                episodes={unwatchedEpisodes}
+                selectedEpisode={selectedEpisode}
+                onToggleWatched={onToggleWatched}
+                onUpdateNote={onUpdateNote}
+                setSelectedEpisode={setSelectedEpisode}
+              />
+            </div>
+          )}
+
+          {watchedEpisodes.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-6 text-gray-100">
+                <ListChecks className="text-emerald-400" size={20} />
+                <h2 className="text-lg font-semibold">Watched Episodes ({watchedEpisodes.length})</h2>
+              </div>
+              <EpisodeList
+                episodes={watchedEpisodes}
+                selectedEpisode={selectedEpisode}
+                onToggleWatched={onToggleWatched}
+                onUpdateNote={onUpdateNote}
+                setSelectedEpisode={setSelectedEpisode}
+              />
+            </div>
+          )}
         </div>
       </div>
 
