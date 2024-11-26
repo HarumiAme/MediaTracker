@@ -1,5 +1,5 @@
-import React from 'react';
-import { CheckCircle2, Circle, PlayCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { CheckCircle2, Circle, PlayCircle, ChevronDown } from 'lucide-react';
 import { Episode } from '../types/show';
 
 interface SeasonSelectorProps {
@@ -10,6 +10,20 @@ interface SeasonSelectorProps {
 }
 
 export function SeasonSelector({ seasons, currentSeason, episodes, onSeasonChange }: SeasonSelectorProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const getSeasonStatus = (season: number) => {
     const seasonEpisodes = episodes.filter(ep => ep.season === season);
     const watchedEpisodes = seasonEpisodes.filter(ep => ep.watched).length;
@@ -31,38 +45,67 @@ export function SeasonSelector({ seasons, currentSeason, episodes, onSeasonChang
     return `${watchedEpisodes}/${totalEpisodes}`;
   };
 
+  const currentStatus = getSeasonStatus(currentSeason);
+
   return (
-    <div className="flex flex-wrap gap-2">
-      {seasons.map((season) => {
-        const status = getSeasonStatus(season);
-        const progress = getSeasonProgress(season);
-        
-        return (
-          <button
-            key={season}
-            onClick={() => onSeasonChange(season)}
-            className={`
-              flex items-center gap-2 px-4 py-2 rounded-lg transition-all
-              ${currentSeason === season ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-gray-900' : ''}
-              ${status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 
-                status === 'in-progress' ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' : 
-                'bg-gray-800 text-gray-400 hover:bg-gray-700'}
-            `}
-          >
-            <span className="relative">
-              {status === 'completed' ? (
-                <CheckCircle2 size={16} className="text-emerald-400" />
-              ) : status === 'in-progress' ? (
-                <PlayCircle size={16} className="text-blue-400" />
-              ) : (
-                <Circle size={16} className="text-gray-400" />
-              )}
-            </span>
-            <span className="font-medium">Season {season}</span>
-            <span className="text-xs opacity-75">({progress})</span>
-          </button>
-        );
-      })}
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-3 px-4 py-2.5 bg-gray-800/80 backdrop-blur-sm rounded-lg hover:bg-gray-800 transition-colors border border-gray-700"
+      >
+        <div className="flex items-center gap-2">
+          {currentStatus === 'completed' ? (
+            <CheckCircle2 size={18} className="text-emerald-400" />
+          ) : currentStatus === 'in-progress' ? (
+            <PlayCircle size={18} className="text-blue-400" />
+          ) : (
+            <Circle size={18} className="text-gray-400" />
+          )}
+          <span className="font-medium text-gray-100">Season {currentSeason}</span>
+          <span className="text-sm text-gray-400">({getSeasonProgress(currentSeason)})</span>
+        </div>
+        <ChevronDown
+          size={18}
+          className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-2 py-2 bg-gray-800 rounded-lg border border-gray-700 shadow-xl max-h-[300px] overflow-y-auto">
+          {seasons.map((season) => {
+            const status = getSeasonStatus(season);
+            const progress = getSeasonProgress(season);
+            
+            return (
+              <button
+                key={season}
+                onClick={() => {
+                  onSeasonChange(season);
+                  setIsOpen(false);
+                }}
+                className={`
+                  w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-700/50 transition-colors
+                  ${currentSeason === season ? 'bg-gray-700' : ''}
+                `}
+              >
+                {status === 'completed' ? (
+                  <CheckCircle2 size={18} className="text-emerald-400" />
+                ) : status === 'in-progress' ? (
+                  <PlayCircle size={18} className="text-blue-400" />
+                ) : (
+                  <Circle size={18} className="text-gray-400" />
+                )}
+                <span className={`font-medium ${currentSeason === season ? 'text-gray-100' : 'text-gray-300'}`}>
+                  Season {season}
+                </span>
+                <span className="text-sm text-gray-400 ml-auto">
+                  {progress}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

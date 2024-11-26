@@ -5,7 +5,13 @@ import { useShowStore } from '../store/useShowStore';
 import { ConfirmationModal } from './ConfirmationModal';
 import { SeasonSelector } from './SeasonSelector';
 
-// ... [Previous interfaces remain the same]
+interface EpisodeListProps {
+  episodes: Episode[];
+  selectedEpisode: number | null;
+  onToggleWatched: (episodeId: number) => void;
+  onUpdateNote: (episodeId: number, note: string) => void;
+  setSelectedEpisode: (episodeId: number | null) => void;
+}
 
 function EpisodeList({ episodes, selectedEpisode, onToggleWatched, onUpdateNote, setSelectedEpisode }: EpisodeListProps) {
   return (
@@ -147,7 +153,7 @@ export function ShowDetail({
           </button>
           <div className="absolute bottom-0 p-8 w-full">
             <h1 className="text-4xl font-bold text-gray-100 mb-6">{show.name}</h1>
-            <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <SeasonSelector
                 seasons={seasons}
                 currentSeason={show.currentSeason}
