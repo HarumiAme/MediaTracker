@@ -18,6 +18,25 @@ interface ShowStore {
   clearShows: () => void;
 }
 
+// Helper function to clean object for Firestore
+const cleanForFirestore = (obj: any): any => {
+  const cleaned: any = {};
+  
+  Object.keys(obj).forEach(key => {
+    if (obj[key] !== undefined) {
+      if (Array.isArray(obj[key])) {
+        cleaned[key] = obj[key].map(cleanForFirestore);
+      } else if (obj[key] && typeof obj[key] === 'object') {
+        cleaned[key] = cleanForFirestore(obj[key]);
+      } else {
+        cleaned[key] = obj[key];
+      }
+    }
+  });
+  
+  return cleaned;
+};
+
 export const useShowStore = create<ShowStore>((set, get) => ({
   shows: [],
   loading: false,
@@ -31,7 +50,7 @@ export const useShowStore = create<ShowStore>((set, get) => ({
     const { user } = useAuthStore.getState();
     if (!user) return;
 
-    set({ loading: true, error: null, shows: [] }); // Clear shows immediately when loading
+    set({ loading: true, error: null });
     try {
       const shows = await showService.getShows(user.uid);
       set({ shows });
@@ -57,7 +76,6 @@ export const useShowStore = create<ShowStore>((set, get) => ({
         number: ep.number,
         summary: ep.summary,
         watched: false,
-        note: '',
       }));
 
       const trackedShow: TrackedShow = {
@@ -69,13 +87,12 @@ export const useShowStore = create<ShowStore>((set, get) => ({
 
       await showService.addShow(user.uid, show, episodes);
       
-      // Update local state immediately
       const { shows } = get();
       set({ shows: [...shows, trackedShow] });
     } catch (error) {
       set({ error: 'Failed to add show' });
       console.error('Error adding show:', error);
-      throw error; // Re-throw to handle in the UI
+      throw error;
     } finally {
       set({ loading: false });
     }
@@ -88,12 +105,16 @@ export const useShowStore = create<ShowStore>((set, get) => ({
     const { shows } = get();
     const updatedShows = shows.map((show) => {
       if (show.id === showId) {
-        return {
-          ...show,
-          episodes: show.episodes.map((ep) =>
-            ep.id === episodeId ? { ...ep, watched: !ep.watched } : ep
-          ),
-        };
+        const episodes = show.episodes.map((ep) =>
+          ep.id === episodeId
+            ? {
+                ...ep,
+                watched: !ep.watched,
+                watchedAt: !ep.watched ? Date.now() : null,
+              }
+            : ep
+        );
+        return { ...show, episodes };
       }
       return show;
     });
@@ -101,7 +122,7 @@ export const useShowStore = create<ShowStore>((set, get) => ({
     set({ shows: updatedShows });
     const updatedShow = updatedShows.find((s) => s.id === showId);
     if (updatedShow) {
-      await showService.updateShow(user.uid, updatedShow);
+      await showService.updateShow(user.uid, cleanForFirestore(updatedShow));
     }
   },
 
@@ -112,12 +133,10 @@ export const useShowStore = create<ShowStore>((set, get) => ({
     const { shows } = get();
     const updatedShows = shows.map((show) => {
       if (show.id === showId) {
-        return {
-          ...show,
-          episodes: show.episodes.map((ep) =>
-            ep.id === episodeId ? { ...ep, note } : ep
-          ),
-        };
+        const episodes = show.episodes.map((ep) =>
+          ep.id === episodeId ? { ...ep, note } : ep
+        );
+        return { ...show, episodes };
       }
       return show;
     });
@@ -125,7 +144,7 @@ export const useShowStore = create<ShowStore>((set, get) => ({
     set({ shows: updatedShows });
     const updatedShow = updatedShows.find((s) => s.id === showId);
     if (updatedShow) {
-      await showService.updateShow(user.uid, updatedShow);
+      await showService.updateShow(user.uid, cleanForFirestore(updatedShow));
     }
   },
 
@@ -141,7 +160,37 @@ export const useShowStore = create<ShowStore>((set, get) => ({
     set({ shows: updatedShows });
     const updatedShow = updatedShows.find((s) => s.id === showId);
     if (updatedShow) {
-      await showService.updateShow(user.uid, updatedShow);
+      await showService.updateShow(user.uid, cleanForFirestore(updatedShow));
+    }
+  },
+
+  markAllEpisodesWatched: async (showId: number, season?: number, watched: boolean = true) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+
+    const now = Date.now();
+    const { shows } = get();
+    const updatedShows = shows.map((show) => {
+      if (show.id === showId) {
+        const episodes = show.episodes.map((ep) => {
+          if (season === undefined || ep.season === season) {
+            return {
+              ...ep,
+              watched,
+              watchedAt: watched ? now : null,
+            };
+          }
+          return ep;
+        });
+        return { ...show, episodes };
+      }
+      return show;
+    });
+
+    set({ shows: updatedShows });
+    const updatedShow = updatedShows.find((s) => s.id === showId);
+    if (updatedShow) {
+      await showService.updateShow(user.uid, cleanForFirestore(updatedShow));
     }
   },
 
@@ -159,33 +208,6 @@ export const useShowStore = create<ShowStore>((set, get) => ({
       console.error('Error deleting show:', error);
     } finally {
       set({ loading: false });
-    }
-  },
-
-  markAllEpisodesWatched: async (showId: number, season?: number, watched: boolean = true) => {
-    const { user } = useAuthStore.getState();
-    if (!user) return;
-
-    const { shows } = get();
-    const updatedShows = shows.map((show) => {
-      if (show.id === showId) {
-        return {
-          ...show,
-          episodes: show.episodes.map((ep) => {
-            if (season === undefined || ep.season === season) {
-              return { ...ep, watched };
-            }
-            return ep;
-          }),
-        };
-      }
-      return show;
-    });
-
-    set({ shows: updatedShows });
-    const updatedShow = updatedShows.find((s) => s.id === showId);
-    if (updatedShow) {
-      await showService.updateShow(user.uid, updatedShow);
     }
   },
 }));

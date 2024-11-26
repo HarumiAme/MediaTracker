@@ -16,6 +16,7 @@ export interface Episode {
   summary: string;
   watched: boolean;
   note?: string;
+  watchedAt?: number; // Unix timestamp in milliseconds
 }
 
 export interface TrackedShow extends Show {
