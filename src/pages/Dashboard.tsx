@@ -1,13 +1,50 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Loader2, Search } from 'lucide-react';
+import { Plus, Loader2, Search, ListTodo, PlayCircle, CheckCircle2 } from 'lucide-react';
 import { ShowCard } from '../components/ShowCard';
 import { AddShowModal } from '../components/AddShowModal';
 import { ShowDetail } from '../components/ShowDetail';
 import { useShowStore } from '../store/useShowStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { TrackedShow } from '../types/show';
+
+function ShowSection({ title, shows, icon: Icon, description, onClick }: { 
+  title: string; 
+  shows: TrackedShow[]; 
+  icon: React.ElementType;
+  description: string;
+  onClick: (show: TrackedShow) => void;
+}) {
+  if (shows.length === 0) return null;
+
+  return (
+    <div className="mb-12">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 rounded-lg bg-gray-800">
+          <Icon className="w-5 h-5 text-emerald-400" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-100">{title}</h2>
+        <span className="text-gray-500 text-sm">({shows.length})</span>
+      </div>
+      <p className="text-gray-400 mb-6">{description}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {shows.map((show) => (
+          <ShowCard key={show.id} show={show} onClick={() => onClick(show)} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function Dashboard() {
-  const { shows, loading, loadShows, addShow, toggleEpisodeWatched, updateEpisodeNote, setCurrentSeason } = useShowStore();
+  const {
+    shows,
+    loading,
+    loadShows,
+    addShow,
+    toggleEpisodeWatched,
+    updateEpisodeNote,
+    setCurrentSeason,
+  } = useShowStore();
   const { signOut, user } = useAuthStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedShow, setSelectedShow] = useState<number | null>(null);
@@ -17,8 +54,26 @@ export function Dashboard() {
     loadShows();
   }, [loadShows]);
 
-  const filteredShows = shows.filter(show =>
+  const filteredShows = shows.filter((show) =>
     show.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const categorizedShows = filteredShows.reduce(
+    (acc, show) => {
+      const watchedEpisodes = show.episodes.filter((ep) => ep.watched).length;
+      const totalEpisodes = show.episodes.length;
+      
+      if (watchedEpisodes === 0) {
+        acc.pending.push(show);
+      } else if (watchedEpisodes === totalEpisodes) {
+        acc.completed.push(show);
+      } else {
+        acc.inProgress.push(show);
+      }
+      
+      return acc;
+    },
+    { pending: [] as TrackedShow[], inProgress: [] as TrackedShow[], completed: [] as TrackedShow[] }
   );
 
   if (loading && shows.length === 0) {
@@ -52,10 +107,14 @@ export function Dashboard() {
 
       {selectedShow ? (
         <ShowDetail
-          show={shows.find(s => s.id === selectedShow)!}
+          show={shows.find((s) => s.id === selectedShow)!}
           onBack={() => setSelectedShow(null)}
-          onToggleWatched={(episodeId) => toggleEpisodeWatched(selectedShow, episodeId)}
-          onUpdateNote={(episodeId, note) => updateEpisodeNote(selectedShow, episodeId, note)}
+          onToggleWatched={(episodeId) =>
+            toggleEpisodeWatched(selectedShow, episodeId)
+          }
+          onUpdateNote={(episodeId, note) =>
+            updateEpisodeNote(selectedShow, episodeId, note)
+          }
           onSeasonChange={(season) => setCurrentSeason(selectedShow, season)}
         />
       ) : (
@@ -70,7 +129,10 @@ export function Dashboard() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-gray-800 text-gray-100 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500"
                 />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={20} />
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  size={20}
+                />
               </div>
             </div>
             <button
@@ -87,7 +149,9 @@ export function Dashboard() {
               <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Plus size={24} className="text-emerald-400" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-100 mb-2">Start Your Watch List</h3>
+              <h3 className="text-xl font-semibold text-gray-100 mb-2">
+                Start Your Watch List
+              </h3>
               <p className="text-gray-400 mb-8">
                 Add your favorite shows and start tracking your progress
               </p>
@@ -100,14 +164,28 @@ export function Dashboard() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredShows.map((show) => (
-                <ShowCard
-                  key={show.id}
-                  show={show}
-                  onClick={() => setSelectedShow(show.id)}
-                />
-              ))}
+            <div className="space-y-8">
+              <ShowSection
+                title="In Progress"
+                shows={categorizedShows.inProgress}
+                icon={PlayCircle}
+                description="Shows you're currently watching"
+                onClick={(show) => setSelectedShow(show.id)}
+              />
+              <ShowSection
+                title="Up Next"
+                shows={categorizedShows.pending}
+                icon={ListTodo}
+                description="Shows you haven't started watching yet"
+                onClick={(show) => setSelectedShow(show.id)}
+              />
+              <ShowSection
+                title="Completed"
+                shows={categorizedShows.completed}
+                icon={CheckCircle2}
+                description="Shows you've finished watching"
+                onClick={(show) => setSelectedShow(show.id)}
+              />
             </div>
           )}
         </div>
