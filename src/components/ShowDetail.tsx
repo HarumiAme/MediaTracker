@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { TrackedShow, Episode } from '../types/show';
-import { ChevronLeft, Check, MessageSquare, ChevronDown, Trash2, X } from 'lucide-react';
+import { ChevronLeft, Check, MessageSquare, Trash2, X } from 'lucide-react';
 import { useShowStore } from '../store/useShowStore';
 import { ConfirmationModal } from './ConfirmationModal';
+import { SeasonSelector } from './SeasonSelector';
 
 interface ShowDetailProps {
   show: TrackedShow;
@@ -69,22 +70,14 @@ export function ShowDetail({
             <Trash2 size={24} />
           </button>
           <div className="absolute bottom-0 p-8 w-full">
-            <h1 className="text-4xl font-bold text-gray-100 mb-4">{show.name}</h1>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <select
-                  value={show.currentSeason}
-                  onChange={(e) => onSeasonChange(Number(e.target.value))}
-                  className="appearance-none bg-gray-800 text-gray-100 px-4 py-2 pr-10 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                >
-                  {seasons.map((season) => (
-                    <option key={season} value={season}>
-                      Season {season}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-              </div>
+            <h1 className="text-4xl font-bold text-gray-100 mb-6">{show.name}</h1>
+            <div className="space-y-4">
+              <SeasonSelector
+                seasons={seasons}
+                currentSeason={show.currentSeason}
+                episodes={show.episodes}
+                onSeasonChange={onSeasonChange}
+              />
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowMarkWatchedModal(true)}
