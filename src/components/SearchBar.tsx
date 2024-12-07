@@ -4,14 +4,15 @@ import { Search, X } from 'lucide-react';
 interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 }
 
-export function SearchBar({ value, onChange }: SearchBarProps) {
+export function SearchBar({ value, onChange, placeholder = "Search your shows..." }: SearchBarProps) {
   return (
     <div className="relative w-full">
       <input
         type="text"
-        placeholder="Search your shows..."
+        placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full pl-10 pr-12 py-2 bg-gray-800 text-gray-100 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500"
