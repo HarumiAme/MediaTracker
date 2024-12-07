@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, KeyRound } from 'lucide-react';
 import { ShowCard } from '../components/ShowCard';
 import { AddShowModal } from '../components/AddShowModal';
 import { ShowDetail } from '../components/ShowDetail';
@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { TrackedShow } from '../types/show';
 import { SortControls } from '../components/SortControls';
 import { SearchBar } from '../components/SearchBar';
+import { ChangePasswordModal } from '../components/ChangePasswordModal';
 
 type SortOption = 'lastWatched' | 'alphabetical' | 'progress';
 type SortDirection = 'asc' | 'desc';
@@ -54,6 +55,7 @@ function Dashboard() {
   } = useShowStore();
   const { signOut, user } = useAuthStore();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedShow, setSelectedShow] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortState, setSortState] = useState<SortState>({
@@ -138,6 +140,13 @@ function Dashboard() {
             </h1>
             <div className="flex items-center gap-6">
               <span className="text-gray-400">{user?.email}</span>
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="flex items-center gap-2 text-gray-400 hover:text-gray-200 font-medium transition-colors"
+              >
+                <KeyRound size={16} />
+                Change Password
+              </button>
               <button
                 onClick={() => signOut()}
                 className="text-gray-400 hover:text-gray-200 font-medium transition-colors"
@@ -265,6 +274,11 @@ function Dashboard() {
           onAddShow={addShow}
         />
       )}
+
+      <ChangePasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </div>
   );
 }
