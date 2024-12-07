@@ -20,7 +20,7 @@ export function SortControls({
   showLastWatchedSort = false 
 }: SortControlsProps) {
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 min-w-max">
       {showLastWatchedSort && (
         <button
           onClick={() => onSortChange('lastWatched')}
@@ -30,11 +30,12 @@ export function SortControls({
               : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
           }`}
         >
-          <Clock size={18} />
-          Last Watched
-          {currentSort === 'lastWatched' && (
-            currentDirection === 'desc' ? <ArrowDown size={16} /> : <ArrowUp size={16} />
+          {currentSort === 'lastWatched' ? (
+            currentDirection === 'desc' ? <ArrowDown size={18} /> : <ArrowUp size={18} />
+          ) : (
+            <Clock size={18} />
           )}
+          Last Watched
         </button>
       )}
       <button
@@ -61,11 +62,12 @@ export function SortControls({
               : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
           }`}
         >
-          <Percent size={18} />
-          Progress
-          {currentSort === 'progress' && (
-            currentDirection === 'desc' ? <ArrowDown size={16} /> : <ArrowUp size={16} />
+          {currentSort === 'progress' ? (
+            currentDirection === 'desc' ? <ArrowDown size={18} /> : <ArrowUp size={18} />
+          ) : (
+            <Percent size={18} />
           )}
+          Progress
         </button>
       )}
     </div>
