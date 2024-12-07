@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TrackedShow, Episode } from '../types/show';
-import { ChevronLeft, Check, MessageSquare, Trash2, X, ListChecks, ListTodo, ArrowDownUp } from 'lucide-react';
+import { ChevronLeft, Check, MessageSquare, Trash2, X, ListChecks, ListTodo, ArrowDownUp, PlayCircle } from 'lucide-react';
 import { useShowStore } from '../store/useShowStore';
 import { ConfirmationModal } from './ConfirmationModal';
 import { SeasonSelector } from './SeasonSelector';
@@ -9,11 +9,21 @@ interface EpisodeListProps {
   episodes: Episode[];
   selectedEpisode: number | null;
   onToggleWatched: (episodeId: number) => void;
+  onWatchUntilHere: (episodeId: number) => void;
   onUpdateNote: (episodeId: number, note: string) => void;
   setSelectedEpisode: (episodeId: number | null) => void;
 }
 
-function EpisodeList({ episodes, selectedEpisode, onToggleWatched, onUpdateNote, setSelectedEpisode }: EpisodeListProps) {
+function EpisodeList({ 
+  episodes, 
+  selectedEpisode, 
+  onToggleWatched, 
+  onWatchUntilHere,
+  onUpdateNote, 
+  setSelectedEpisode 
+}: EpisodeListProps) {
+  const [showWatchUntilModal, setShowWatchUntilModal] = useState<number | null>(null);
+
   return (
     <div className="space-y-4">
       {episodes.map((episode) => (
@@ -27,33 +37,45 @@ function EpisodeList({ episodes, selectedEpisode, onToggleWatched, onUpdateNote,
         >
           <div className="p-4">
             <div className="flex items-start gap-4">
-              <button
-                onClick={() => onToggleWatched(episode.id)}
-                className={`p-2 rounded-lg transition-colors ${
-                  episode.watched
-                    ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                    : 'bg-gray-900 text-gray-500 hover:text-gray-400 hover:bg-gray-700'
-                }`}
-              >
-                <Check size={20} />
-              </button>
+              {!episode.watched && (
+                <button
+                  onClick={() => setShowWatchUntilModal(episode.id)}
+                  className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
+                  title="Watch until here (marks all previous episodes as watched)"
+                >
+                  <PlayCircle size={20} />
+                </button>
+              )}
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h3 className={`font-semibold ${episode.watched ? 'text-emerald-300' : 'text-gray-100'}`}>
                     Episode {episode.number}: {episode.name}
                   </h3>
-                  <button
-                    onClick={() => setSelectedEpisode(
-                      selectedEpisode === episode.id ? null : episode.id
-                    )}
-                    className={`p-2 rounded-lg transition-colors ${
-                      episode.note
-                        ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
-                        : 'bg-gray-900 text-gray-500 hover:text-gray-400 hover:bg-gray-700'
-                    }`}
-                  >
-                    <MessageSquare size={20} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedEpisode(
+                        selectedEpisode === episode.id ? null : episode.id
+                      )}
+                      className={`p-2 rounded-lg transition-colors ${
+                        episode.note
+                          ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                          : 'bg-gray-900 text-gray-500 hover:text-gray-400 hover:bg-gray-700'
+                      }`}
+                    >
+                      <MessageSquare size={20} />
+                    </button>
+                    <button
+                      onClick={() => onToggleWatched(episode.id)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        episode.watched
+                          ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                          : 'bg-gray-900 text-gray-500 hover:text-gray-400 hover:bg-gray-700'
+                      }`}
+                      title={episode.watched ? "Mark as unwatched" : "Mark as watched"}
+                    >
+                      <Check size={20} />
+                    </button>
+                  </div>
                 </div>
                 <p 
                   className={`text-sm mt-1 ${episode.watched ? 'text-emerald-300/70' : 'text-gray-400'}`}
@@ -74,10 +96,30 @@ function EpisodeList({ episodes, selectedEpisode, onToggleWatched, onUpdateNote,
               </div>
             )}
           </div>
+
+          <ConfirmationModal
+            isOpen={showWatchUntilModal === episode.id}
+            onClose={() => setShowWatchUntilModal(null)}
+            onConfirm={() => {
+              onWatchUntilHere(episode.id);
+              setShowWatchUntilModal(null);
+            }}
+            title="Watch Until Here"
+            message={`This will mark this episode and all previous episodes as watched. Are you sure?`}
+            confirmText="Yes, mark as watched"
+          />
         </div>
       ))}
     </div>
   );
+}
+
+interface ShowDetailProps {
+  show: TrackedShow;
+  onBack: () => void;
+  onToggleWatched: (episodeId: number) => void;
+  onUpdateNote: (episodeId: number, note: string) => void;
+  onSeasonChange: (season: number) => void;
 }
 
 export function ShowDetail({
@@ -92,7 +134,7 @@ export function ShowDetail({
   const [showMarkWatchedModal, setShowMarkWatchedModal] = useState(false);
   const [showMarkUnwatchedModal, setShowMarkUnwatchedModal] = useState(false);
   const [separateWatched, setSeparateWatched] = useState(true);
-  const { deleteShow, markAllEpisodesWatched } = useShowStore();
+  const { deleteShow, markAllEpisodesWatched, watchUntilEpisode } = useShowStore();
 
   const seasons = Array.from(
     new Set(show.episodes.map((ep) => ep.season))
@@ -111,7 +153,6 @@ export function ShowDetail({
     watchedEpisodes = currentSeasonEpisodes.filter(ep => ep.watched)
       .sort((a, b) => a.number - b.number);
   } else {
-    // When not separating, show all episodes in chronological order
     unwatchedEpisodes = currentSeasonEpisodes.sort((a, b) => a.number - b.number);
     watchedEpisodes = [];
   }
@@ -127,6 +168,10 @@ export function ShowDetail({
 
   const handleMarkSeasonUnwatched = async () => {
     await markAllEpisodesWatched(show.id, show.currentSeason, false);
+  };
+
+  const handleWatchUntilHere = async (episodeId: number) => {
+    await watchUntilEpisode(show.id, episodeId);
   };
 
   return (
@@ -208,6 +253,7 @@ export function ShowDetail({
                 episodes={unwatchedEpisodes}
                 selectedEpisode={selectedEpisode}
                 onToggleWatched={onToggleWatched}
+                onWatchUntilHere={handleWatchUntilHere}
                 onUpdateNote={onUpdateNote}
                 setSelectedEpisode={setSelectedEpisode}
               />
@@ -224,6 +270,7 @@ export function ShowDetail({
                 episodes={watchedEpisodes}
                 selectedEpisode={selectedEpisode}
                 onToggleWatched={onToggleWatched}
+                onWatchUntilHere={handleWatchUntilHere}
                 onUpdateNote={onUpdateNote}
                 setSelectedEpisode={setSelectedEpisode}
               />

@@ -15,6 +15,7 @@ interface ShowStore {
   setCurrentSeason: (showId: number, season: number) => Promise<void>;
   deleteShow: (showId: number) => Promise<void>;
   markAllEpisodesWatched: (showId: number, season?: number, watched?: boolean) => Promise<void>;
+  watchUntilEpisode: (showId: number, episodeId: number) => Promise<void>;
   clearShows: () => void;
 }
 
@@ -114,6 +115,44 @@ export const useShowStore = create<ShowStore>((set, get) => ({
               }
             : ep
         );
+        return { ...show, episodes };
+      }
+      return show;
+    });
+
+    set({ shows: updatedShows });
+    const updatedShow = updatedShows.find((s) => s.id === showId);
+    if (updatedShow) {
+      await showService.updateShow(user.uid, cleanForFirestore(updatedShow));
+    }
+  },
+
+  watchUntilEpisode: async (showId: number, episodeId: number) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+
+    const { shows } = get();
+    const now = Date.now();
+    
+    const updatedShows = shows.map((show) => {
+      if (show.id === showId) {
+        const targetEpisode = show.episodes.find(ep => ep.id === episodeId);
+        if (!targetEpisode) return show;
+
+        const episodes = show.episodes.map((ep) => {
+          // Mark as watched if:
+          // 1. Episode is in an earlier season, or
+          // 2. Episode is in the same season but has a lower or equal episode number
+          if (ep.season < targetEpisode.season || 
+              (ep.season === targetEpisode.season && ep.number <= targetEpisode.number)) {
+            return {
+              ...ep,
+              watched: true,
+              watchedAt: ep.watched ? ep.watchedAt : now,
+            };
+          }
+          return ep;
+        });
         return { ...show, episodes };
       }
       return show;
