@@ -93,25 +93,25 @@ function EpisodeList({
             </div>
             
             {selectedEpisode === episode.id && (
-              <div className="mt-4 pl-14">
-                <div className="relative">
-                  <textarea
-                    value={episode.note || ''}
-                    onChange={(e) => onUpdateNote(episode.id, e.target.value)}
-                    placeholder="Add your notes about this episode..."
-                    className="w-full p-3 pb-12 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 resize-none"
-                    rows={4}
-                  />
-                  {episode.note && (
+              <div className="mt-4 pl-14 space-y-3">
+                <textarea
+                  value={episode.note || ''}
+                  onChange={(e) => onUpdateNote(episode.id, e.target.value)}
+                  placeholder="Add your notes about this episode..."
+                  className="w-full p-3 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 resize-none"
+                  rows={4}
+                />
+                {episode.note && (
+                  <div className="flex justify-end">
                     <button
                       onClick={() => setShowDeleteNoteModal(episode.id)}
-                      className="absolute bottom-3 right-3 px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-2 text-sm"
+                      className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-2 text-sm"
                     >
                       <Trash2 size={16} />
                       Delete Note
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
