@@ -24,6 +24,13 @@ function EpisodeList({
   setSelectedEpisode 
 }: EpisodeListProps) {
   const [showWatchUntilModal, setShowWatchUntilModal] = useState<number | null>(null);
+  const [showDeleteNoteModal, setShowDeleteNoteModal] = useState<number | null>(null);
+
+  const handleDeleteNote = (episodeId: number) => {
+    onUpdateNote(episodeId, '');
+    setShowDeleteNoteModal(null);
+    setSelectedEpisode(null); // Close the comment section
+  };
 
   return (
     <div className="space-y-4">
@@ -92,16 +99,16 @@ function EpisodeList({
                     value={episode.note || ''}
                     onChange={(e) => onUpdateNote(episode.id, e.target.value)}
                     placeholder="Add your notes about this episode..."
-                    className="w-full p-3 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 resize-none"
+                    className="w-full p-3 pb-12 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 resize-none"
                     rows={4}
                   />
                   {episode.note && (
                     <button
-                      onClick={() => onUpdateNote(episode.id, '')}
-                      className="absolute top-2 right-2 p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                      title="Delete note"
+                      onClick={() => setShowDeleteNoteModal(episode.id)}
+                      className="absolute bottom-3 right-3 px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-2 text-sm"
                     >
                       <Trash2 size={16} />
+                      Delete Note
                     </button>
                   )}
                 </div>
@@ -119,6 +126,16 @@ function EpisodeList({
             title="Watch Until Here"
             message={`This will mark this episode and all previous episodes as watched. Are you sure?`}
             confirmText="Yes, mark as watched"
+          />
+
+          <ConfirmationModal
+            isOpen={showDeleteNoteModal === episode.id}
+            onClose={() => setShowDeleteNoteModal(null)}
+            onConfirm={() => handleDeleteNote(episode.id)}
+            title="Delete Note"
+            message="Are you sure you want to delete this note? This action cannot be undone."
+            confirmText="Delete"
+            isDangerous
           />
         </div>
       ))}
