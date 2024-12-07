@@ -87,13 +87,24 @@ function EpisodeList({
             
             {selectedEpisode === episode.id && (
               <div className="mt-4 pl-14">
-                <textarea
-                  value={episode.note || ''}
-                  onChange={(e) => onUpdateNote(episode.id, e.target.value)}
-                  placeholder="Add your notes about this episode..."
-                  className="w-full p-3 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 resize-none"
-                  rows={4}
-                />
+                <div className="relative">
+                  <textarea
+                    value={episode.note || ''}
+                    onChange={(e) => onUpdateNote(episode.id, e.target.value)}
+                    placeholder="Add your notes about this episode..."
+                    className="w-full p-3 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 resize-none"
+                    rows={4}
+                  />
+                  {episode.note && (
+                    <button
+                      onClick={() => onUpdateNote(episode.id, '')}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                      title="Delete note"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -232,11 +243,11 @@ export function ShowDetail({
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="flex flex-col gap-4 mb-8">
             <h2 className="text-xl font-bold text-gray-100">Season {show.currentSeason} Episodes</h2>
-            <div className="flex items-center gap-4 w-full md:w-auto">
-              <div className="flex-1 md:w-64">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="flex-1">
                 <SearchBar 
                   value={searchQuery} 
                   onChange={setSearchQuery}
@@ -245,7 +256,7 @@ export function ShowDetail({
               </div>
               <button
                 onClick={() => setSeparateWatched(!separateWatched)}
-                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   separateWatched
                     ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
                     : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
